@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
+    "paths": {
+      "@shared/*": ["./shared/*"]
+    },
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
+    "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": ".",
-    "target": "es2020",
-    "module": "commonjs",
     "strict": true
   },
   "compileOnSave": true,

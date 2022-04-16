@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": true,
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true
+  },
+  "compileOnSave": true,
+  "include": ["**/*"],
+  "references": []
+}
