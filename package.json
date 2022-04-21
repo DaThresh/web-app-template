@@ -14,18 +14,20 @@
   },
   "scripts": {
     "start": "ts-node ./server/server.ts",
-    "build": "tsc"
+    "build": "NODE_ENV=production tsc && webpack --config webpack.prod.ts"
   },
   "dependencies": {
     "dotenv": "^16.0.0",
     "express": "^5.0.0-beta.1",
     "mysql2": "^2.3.3",
     "sequelize": "^6.18.0",
+    "winston": "^3.7.2",
     "yup": "^0.32.11"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "^17.0.2",
     "@types/express": "^4.17.13",
+    "@types/imagemin": "^8.0.0",
     "@types/node": "^17.0.23",
     "@types/react": "^18.0.5",
     "@types/react-dom": "^18.0.1",
