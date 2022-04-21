@@ -2,14 +2,18 @@ FROM node:16.14-slim
 
 WORKDIR /app
 
-COPY package.json yarn.lock tsconfig.json /app/
+COPY package.json yarn.lock tsconfig.json webpack.common.ts webpack.prod.ts /app/
 
 RUN yarn install
 
-COPY src src
+COPY server server
+COPY client client
+COPY shared shared
 
 RUN yarn build
-RUN rm -rf ./src
+RUN rm -rf ./client
+RUN rm -rf ./server
+RUN rm -rf ./shared
 
 RUN rm -rf node_modules
 RUN yarn install --production --ignore-scripts --prefer-offline
@@ -18,4 +22,4 @@ RUN yarn cache clean
 ENV PORT 8080
 EXPOSE $PORT
 
-CMD node dist/server.js
+CMD node dist/server/server.js
