@@ -1,2 +1,3 @@
-# api-template
-API template repository
+# web-app-template
+
+Web App template for React and Express written in Typescript
