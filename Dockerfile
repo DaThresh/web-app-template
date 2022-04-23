@@ -1,8 +1,8 @@
-FROM node:16.14-slim
+FROM --platform=linux/amd64 node:16.14-slim
 
 WORKDIR /app
 
-COPY package.json yarn.lock tsconfig.json webpack.common.ts webpack.prod.ts /app/
+COPY package.json yarn.lock tsconfig.json webpack.common.ts webpack.dev.ts webpack.prod.ts /app/
 
 RUN yarn install
 
