@@ -4,9 +4,7 @@
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/*"]
-    },
-    "target": "es2020",
-    "module": "commonjs"
+    }
   },
   "include": ["**/*"],
   "references": [{ "path": "../shared/tsconfig.json" }]
