@@ -18,15 +18,15 @@ AppDB.connect({
   username: String(process.env.DATABASE_USERNAME),
   password: String(process.env.DATABASE_PASSWORD),
   port: Number(process.env.DATABASE_PORT),
-}).then(() => {
+}).then(async () => {
   Server.init();
   // Register controllers here
   Server.registerApiCatch();
-  Server.registerStatic(whichEnv() === 'sandbox');
   Server.registerErrorHandler();
+  await Server.registerStatic(whichEnv() === 'sandbox');
 
   if (!process.env.PORT) {
     throw new MissingEnvironmentError('Port not provided for API');
   }
-  Server.listen(Number(process.env.PORT));
+  await Server.listen(Number(process.env.PORT));
 });
