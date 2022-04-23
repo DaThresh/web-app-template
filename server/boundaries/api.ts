@@ -4,6 +4,7 @@ import Controller from '../controllers/controller';
 import { ErrorResponse } from '@shared/interfaces';
 import ApiError, { NotFoundError, SetupError } from '../utilities/errors';
 import logger from './logger';
+import path from 'path';
 
 abstract class Server {
   protected static app?: Express;
@@ -53,7 +54,7 @@ abstract class Server {
     } else {
       Server.app.use(express.static(`${__dirname}/../../public`));
       Server.app.get('/(.*)', (request: Request, response: Response) => {
-        response.type('text/html').send(`${__dirname}/../../public/index.html`);
+        response.type('text/html').sendFile(path.resolve(`${__dirname}/../../public/index.html`));
         logger.http(`Delivered app to ${request.ip}`);
       });
     }
@@ -93,6 +94,7 @@ abstract class Server {
           status = 400;
         } else {
           logger.error(error);
+          logger.error(error.stack);
         }
         response.status(status).send({ name: error.name, message: error.message });
       }
