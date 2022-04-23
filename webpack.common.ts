@@ -43,9 +43,6 @@ export default {
           'file-loader',
           {
             loader: 'image-webpack-loader',
-            options: {
-              disable: true,
-            },
           },
         ],
       },
