@@ -2,116 +2,109 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import { ValidationError } from 'yup';
 import Controller from '../controllers/controller';
 import { ErrorResponse } from '@shared/interfaces';
-import ApiError, { NotFoundError, SetupError } from '../utilities/errors';
+import ApiError, { NotFoundError } from '../utilities/errors';
 import logger from './logger';
 import path from 'path';
 
-abstract class Server {
-  protected static app?: Express;
+class Server {
+  protected express: Express;
 
-  public static init = (): Express => {
-    if (Server.app) {
-      throw new SetupError('Server already initialized');
-    }
+  constructor() {
+    logger.info(`Launching ApiServer using Express`);
+    this.express = express();
+    this.express.use(express.json());
+    this.express.use((request, _, next) => {
+      logger.http(`Received ${request.method} request at ${request.path}`);
+      next();
+    });
+    return this;
+  }
 
-    Server.app = express();
-    Server.app.use(express.json());
-    return Server.app;
+  public registerController = (apiRoute: string, controller: Controller) => {
+    logger.info(`Registered controller with route /api/${apiRoute}`);
+    this.express.use(`/api/${apiRoute}`, controller.router);
   };
 
-  public static registerController = (apiRoute: string, controller: Controller) => {
-    if (!Server.app) {
-      throw new SetupError('Server not initialized');
-    }
-
-    Server.app.use(`/api/${apiRoute}`, controller.router);
-  };
-
-  public static registerStatic = async (enableHmr = false) => {
-    if (!Server.app) {
-      throw new SetupError('Server not initialized');
-    }
-    if (enableHmr) {
-      const { default: webpack } = await import('webpack');
-      const { default: webpackDevMiddleware } = await import('webpack-dev-middleware');
-      const { default: webpackHotMiddleware } = await import('webpack-hot-middleware');
-      const { default: webpackConfig } = await import('../../webpack.dev');
-      const webpackCompiler = webpack({ ...webpackConfig });
-      Server.app.use(
-        webpackDevMiddleware(webpackCompiler, {
-          publicPath: webpackConfig.output?.publicPath,
-          stats: webpackConfig.stats,
-        })
-      );
-      Server.app.use(webpackHotMiddleware(webpackCompiler));
-      Server.app.get('/(.*)', (request: Request, response: Response) => {
-        const indexPath = `${webpackConfig.output?.path}/index.html`;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const index = (webpackCompiler.outputFileSystem as any).readFileSync(indexPath);
-        response.type('text/html').send(index).end();
-        logger.http(`Delivered app to ${request.ip}`);
-      });
-    } else {
-      Server.app.use(express.static(`${__dirname}/../../public`));
-      Server.app.get('/(.*)', (request: Request, response: Response) => {
-        response.type('text/html').sendFile(path.resolve(`${__dirname}/../../public/index.html`));
-        logger.http(`Delivered app to ${request.ip}`);
-      });
-    }
-  };
-
-  public static registerApiCatch = () => {
-    if (!Server.app) {
-      throw new SetupError('Server not initialized');
-    }
-
-    Server.app.use('/api/(.*)', () => {
+  public registerApiCatch = () => {
+    this.express.use('/(.*)', () => {
       throw new NotFoundError('Route not found');
     });
   };
 
-  public static registerErrorHandler = () => {
-    if (!Server.app) {
-      throw new SetupError('Server not initialized');
-    }
-
-    Server.app.use(
+  public registerErrorHandler = () => {
+    this.express.use(
       (
-        error: Error | ApiError,
+        error: Error | ApiError | ValidationError,
         request: Request,
         response: Response<ErrorResponse>,
         // Must have `_: NextFunction` as Express identifies 4 parameter functions as Error handlers
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _: NextFunction
       ) => {
-        logger.error(
-          `Encountered ${error.name} in ${request.method} request to ${request.originalUrl}`
-        );
+        const fullPath = request.originalUrl;
+        logger.http(`Encountered ${error.name} in ${request.method} request to ${fullPath}`);
         let status = 500;
         if (error instanceof ApiError) {
           status = error.statusCode;
         } else if (error instanceof ValidationError) {
           status = 400;
         } else {
-          logger.error(error);
-          logger.error(error.stack);
+          logger
+            .error(`Unexpected HTTP error during ${request.method} request to ${fullPath}`)
+            .error(error.stack);
         }
         response.status(status).send({ name: error.name, message: error.message });
       }
     );
   };
 
-  public static listen = (port: number, hostname?: string) => {
-    return new Promise<void>((resolve, reject) => {
-      if (!Server.app) {
-        throw new SetupError('Server not initialized');
-      }
-
-      Server.app
-        .listen(port, hostname ?? '0.0.0.0', () => logger.info(`App now listening on port ${port}`))
-        .on('error', (error: Error) => reject(error));
+  public listen = (port: number, hostname?: string) => {
+    const server = this.express.listen(port, hostname ?? '0.0.0.0', () => {
+      logger.info(`ApiServer running on port ${port}`);
+      logger.info(`Listening for requests...`);
     });
+
+    process.on('SIGINT', () => {
+      logger.info('Closing ApiServer gracefully');
+      server.close((error) => {
+        if (error) {
+          logger.error('Unable to close ApiServer gracefully').error(error.stack);
+        }
+      });
+    });
+    return server;
+  };
+
+  public registerStatic = async (enableHmr = false) => {
+    if (enableHmr) {
+      const { default: webpack } = await import('webpack');
+      const { default: webpackDevMiddleware } = await import('webpack-dev-middleware');
+      const { default: webpackHotMiddleware } = await import('webpack-hot-middleware');
+      const { default: webpackConfig } = await import('../../webpack.dev');
+      const webpackCompiler = webpack({ ...webpackConfig });
+      this.express.use(
+        webpackDevMiddleware(webpackCompiler, {
+          publicPath: webpackConfig.output?.publicPath,
+          stats: webpackConfig.stats,
+        })
+      );
+      this.express.use(webpackHotMiddleware(webpackCompiler));
+      this.express.get('/(.*)', async (request, response) => {
+        const indexPath = `${webpackConfig.output?.path}/index.html`;
+        const index = await webpackCompiler.outputFileSystem.readFile(indexPath, (error) => {
+          logger.error('Error when serving HMR file').error(error?.stack);
+        });
+        response.type('text/html').send(index).end();
+        logger.http(`Delivered app to ${request.ip}`);
+      });
+    } else {
+      this.express.use(express.static(`${__dirname}/../../public`));
+      this.express.get('/(.*)', (request, response) => {
+        response.type('text/html').sendFile(path.resolve(`${__dirname}/../../public/index.html`));
+        logger.http(`Delivered app to ${request.ip}`);
+      });
+    }
   };
 }
 
-export default Server;
+export default new Server();

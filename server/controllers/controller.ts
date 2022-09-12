@@ -1,6 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { AnyObjectSchema } from 'yup';
-import logger from '../boundaries/logger';
 
 type method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -33,7 +32,6 @@ class Controller {
         response: Response<ResponseBody>,
         next: NextFunction
       ) => {
-        logger.http(`${request.method} ${request.originalUrl}`);
         if (request.method === method) {
           inputSchemas.body?.validateSync(request.body);
           inputSchemas.query?.validateSync(request.query);

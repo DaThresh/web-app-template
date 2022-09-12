@@ -1,7 +1,8 @@
 import { Sequelize } from 'sequelize';
 
-const initModels = async (sequelize: Sequelize) => {
-  // Init models here
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const initAppDBModels = async (sequelize: Sequelize) => {
+  // Initialize models here
 };
 
-export { initModels };
+export { initAppDBModels };
