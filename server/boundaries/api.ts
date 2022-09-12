@@ -25,6 +25,37 @@ class Server {
     this.express.use(`/api/${apiRoute}`, controller.router);
   };
 
+  public registerStatic = async (enableHmr = false) => {
+    if (enableHmr) {
+      const { default: webpack } = await import('webpack');
+      const { default: webpackDevMiddleware } = await import('webpack-dev-middleware');
+      const { default: webpackHotMiddleware } = await import('webpack-hot-middleware');
+      const { default: webpackConfig } = await import('../../webpack.dev');
+      const webpackCompiler = webpack({ ...webpackConfig });
+      this.express.use(
+        webpackDevMiddleware(webpackCompiler, {
+          publicPath: webpackConfig.output?.publicPath,
+          stats: webpackConfig.stats,
+        })
+      );
+      this.express.use(webpackHotMiddleware(webpackCompiler));
+      this.express.get('/(.*)', async (request, response) => {
+        const indexPath = `${webpackConfig.output?.path}/index.html`;
+        const index = await webpackCompiler.outputFileSystem.readFile(indexPath, (error) => {
+          logger.error('Error when serving HMR file').error(error?.stack);
+        });
+        response.type('text/html').send(index).end();
+        logger.http(`Delivered app to ${request.ip}`);
+      });
+    } else {
+      this.express.use(express.static(`${__dirname}/../../public`));
+      this.express.get('/(.*)', (request, response) => {
+        response.type('text/html').sendFile(path.resolve(`${__dirname}/../../public/index.html`));
+        logger.http(`Delivered app to ${request.ip}`);
+      });
+    }
+  };
+
   public registerApiCatch = () => {
     this.express.use('/(.*)', () => {
       throw new NotFoundError('Route not found');
@@ -73,37 +104,6 @@ class Server {
       });
     });
     return server;
-  };
-
-  public registerStatic = async (enableHmr = false) => {
-    if (enableHmr) {
-      const { default: webpack } = await import('webpack');
-      const { default: webpackDevMiddleware } = await import('webpack-dev-middleware');
-      const { default: webpackHotMiddleware } = await import('webpack-hot-middleware');
-      const { default: webpackConfig } = await import('../../webpack.dev');
-      const webpackCompiler = webpack({ ...webpackConfig });
-      this.express.use(
-        webpackDevMiddleware(webpackCompiler, {
-          publicPath: webpackConfig.output?.publicPath,
-          stats: webpackConfig.stats,
-        })
-      );
-      this.express.use(webpackHotMiddleware(webpackCompiler));
-      this.express.get('/(.*)', async (request, response) => {
-        const indexPath = `${webpackConfig.output?.path}/index.html`;
-        const index = await webpackCompiler.outputFileSystem.readFile(indexPath, (error) => {
-          logger.error('Error when serving HMR file').error(error?.stack);
-        });
-        response.type('text/html').send(index).end();
-        logger.http(`Delivered app to ${request.ip}`);
-      });
-    } else {
-      this.express.use(express.static(`${__dirname}/../../public`));
-      this.express.get('/(.*)', (request, response) => {
-        response.type('text/html').sendFile(path.resolve(`${__dirname}/../../public/index.html`));
-        logger.http(`Delivered app to ${request.ip}`);
-      });
-    }
   };
 }
 
