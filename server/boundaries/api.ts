@@ -1,4 +1,5 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
+import { API, IncomingMessage, ServerResponse } from 'webpack-dev-middleware';
 import { ValidationError } from 'yup';
 import Controller from '../controllers/controller';
 import { ErrorResponse } from '@shared/interfaces';
@@ -8,6 +9,7 @@ import path from 'path';
 
 class Server {
   protected express: Express;
+  protected devMiddleware?: API<IncomingMessage, ServerResponse>;
 
   constructor() {
     logger.info(`Launching ApiServer using Express`);
@@ -32,12 +34,11 @@ class Server {
       const { default: webpackHotMiddleware } = await import('webpack-hot-middleware');
       const { default: webpackConfig } = await import('../../webpack.dev');
       const webpackCompiler = webpack({ ...webpackConfig });
-      this.express.use(
-        webpackDevMiddleware(webpackCompiler, {
-          publicPath: webpackConfig.output?.publicPath,
-          stats: webpackConfig.stats,
-        })
-      );
+      this.devMiddleware = webpackDevMiddleware(webpackCompiler, {
+        publicPath: webpackConfig.output?.publicPath,
+        stats: webpackConfig.stats,
+      });
+      this.express.use(this.devMiddleware);
       this.express.use(webpackHotMiddleware(webpackCompiler));
       this.express.get('/(.*)', async (request, response) => {
         const indexPath = `${webpackConfig.output?.path}/index.html`;
@@ -97,6 +98,11 @@ class Server {
 
     process.on('SIGINT', () => {
       logger.info('Closing ApiServer gracefully');
+      this?.devMiddleware?.close((error) => {
+        if (error) {
+          logger.error('Unable to close development middleware gracefully').error(error.stack);
+        }
+      });
       server.close((error) => {
         if (error) {
           logger.error('Unable to close ApiServer gracefully').error(error.stack);
