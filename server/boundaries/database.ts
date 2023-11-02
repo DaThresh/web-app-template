@@ -1,49 +1,47 @@
-import { Dialect, Sequelize } from 'sequelize';
-import logger from './logger';
+import { Sequelize } from 'sequelize';
+import { DatabaseEnvironment } from './environment';
+import { logger } from './logger';
 
-type DatabaseConfig = {
-  username: string;
-  password: string;
-  name: string;
-  host: string;
-  port: number;
-  dialect?: Dialect;
-};
-
-class Database {
+export class Database {
   protected connection: Sequelize;
-  protected options: DatabaseConfig;
 
-  constructor(options: DatabaseConfig) {
-    this.options = options;
-    this.connection = new Sequelize(options.name, options.username, options.password, {
-      host: options.host,
-      port: options.port,
-      dialect: options.dialect || 'mysql',
-      logging: (sql, milliseconds) => logger.verbose(`${sql} ${milliseconds}ms`),
+  public static async initialize(
+    environment: DatabaseEnvironment,
+    initModels: (sequelize: Sequelize) => void
+  ) {
+    const database = new Database(environment);
+    await database.connect(initModels);
+    return database;
+  }
+
+  constructor(environment: DatabaseEnvironment) {
+    this.connection = new Sequelize({
+      host: environment.host,
+      port: environment.port,
+      database: environment.name,
+      username: environment.username,
+      password: environment.password,
+      dialect: 'mysql',
       benchmark: true,
+      logging: (sql, milliseconds) => logger.verbose(`${sql} ${milliseconds}ms`),
     });
 
     return this;
   }
 
   public async connect(initModels: (sequelize: Sequelize) => void) {
-    const name = this.constructor.name;
-
+    initModels(this.connection);
     await this.connection.authenticate();
-    logger.info(`Verified connection to ${name}`);
-    await initModels(this.connection);
-    logger.info(`Initialized models for ${name}`);
+    logger.info(`Verified connection to Database`);
+  }
 
-    process.on('SIGINT', () => {
-      logger.info(`Terminating connection with ${name} gracefully`);
-      this.connection
-        .close()
-        .catch((error) =>
-          logger.error(`Unable to close connection with ${name} gracefully`).error(error.stack)
-        );
-    });
+  public async close() {
+    try {
+      logger.info(`Closing Database connection gracefully...`);
+      await this.connection.close();
+    } catch (error) {
+      logger.error(`Failed to close connection with Database`, error);
+      throw error;
+    }
   }
 }
-
-export default Database;

@@ -1,11 +1,10 @@
-import winston from 'winston';
 import dotenv from 'dotenv';
+import winston from 'winston';
+import { environment } from './environment';
 dotenv.config();
 
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL ?? 'info',
+export const logger = winston.createLogger({
+  level: environment.logLevel,
   format: winston.format.simple(),
   transports: [new winston.transports.Console()],
 });
-
-export default logger;

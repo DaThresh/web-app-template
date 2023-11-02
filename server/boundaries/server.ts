@@ -1,33 +1,51 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, NextFunction, Request, Response } from 'express';
+import { Server as HttpServer } from 'http';
+import { resolve } from 'path';
 import { API, IncomingMessage, ServerResponse } from 'webpack-dev-middleware';
 import { ValidationError } from 'yup';
-import Controller from '../controllers/controller';
-import { ErrorResponse } from '@shared/interfaces';
-import ApiError, { NotFoundError } from '../utilities/errors';
-import logger from './logger';
-import path from 'path';
+import { Controller } from '../controllers/controller';
+import { ErrorResponse } from '../controllers/interfaces/common';
+import { ApiError, NotFoundError } from '../utilities/errors';
+import { logger } from './logger';
 
-class Server {
-  protected express: Express;
-  protected devMiddleware?: API<IncomingMessage, ServerResponse>;
+export class Server {
+  private express: Express;
+  private server?: HttpServer;
+  private devMiddleware?: API<IncomingMessage, ServerResponse>;
 
-  constructor() {
-    logger.info(`Launching ApiServer using Express`);
+  constructor(...controllers: Controller[]) {
     this.express = express();
     this.express.use(express.json());
-    this.express.use((request, _, next) => {
-      logger.http(`Received ${request.method} request at ${request.path}`);
-      next();
-    });
+
+    this.registerLogger();
+    for (const controller of controllers) {
+      this.registerController(controller);
+    }
+    this.registerCatchAll();
+    this.registerErrorHandler();
+
     return this;
   }
 
-  public registerController = (apiRoute: string, controller: Controller) => {
-    logger.info(`Registered controller with route /api/${apiRoute}`);
-    this.express.use(`/api/${apiRoute}`, controller.router);
-  };
+  public async listen(port: number, hostname?: string) {
+    return new Promise<void>((resolve) => {
+      this.server = this.express.listen(port, hostname ?? '0.0.0.0', () => {
+        logger.info(`Listening for requests on port ${port}...`);
+        resolve();
+      });
+    });
+  }
 
-  public registerStatic = async (enableHmr = false) => {
+  public async close() {
+    return new Promise<void>((resolve, reject) => {
+      logger.info(`Closing Server gracefully...`);
+      this.server?.close((error) => {
+        return error ? reject(error) : resolve();
+      }) ?? resolve();
+    });
+  }
+
+  public async registerStatic(enableHmr = false) {
     if (enableHmr) {
       const { default: webpack } = await import('webpack');
       const { default: webpackDevMiddleware } = await import('webpack-dev-middleware');
@@ -51,19 +69,31 @@ class Server {
     } else {
       this.express.use(express.static(`${__dirname}/../../public`));
       this.express.get('/(.*)', (request, response) => {
-        response.type('text/html').sendFile(path.resolve(`${__dirname}/../../public/index.html`));
+        response.type('text/html').sendFile(resolve(`${__dirname}/../../public/index.html`));
         logger.http(`Delivered app to ${request.ip}`);
       });
     }
-  };
+  }
 
-  public registerApiCatch = () => {
-    this.express.use('/(.*)', () => {
+  private registerController(controller: Controller) {
+    logger.info(`Registered controller with route /api${controller.path}`);
+    this.express.use(`/api`, controller.router);
+  }
+
+  private registerLogger() {
+    this.express.use((request, _, next) => {
+      logger.http(`Received ${request.method} request at ${request.path}`);
+      return next();
+    });
+  }
+
+  private registerCatchAll() {
+    this.express.use('/api/(.*)', () => {
       throw new NotFoundError('Route not found');
     });
-  };
+  }
 
-  public registerErrorHandler = () => {
+  private registerErrorHandler() {
     this.express.use(
       (
         error: Error | ApiError | ValidationError,
@@ -81,36 +111,13 @@ class Server {
         } else if (error instanceof ValidationError) {
           status = 400;
         } else {
-          logger
-            .error(`Unexpected HTTP error during ${request.method} request to ${fullPath}`)
-            .error(error.stack);
+          logger.error(
+            `Unexpected HTTP error during ${request.method} request to ${fullPath}`,
+            error
+          );
         }
-        response.status(status).send({ name: error.name, message: error.message });
+        response.status(status).send({ name: error.name, message: error.message }).end();
       }
     );
-  };
-
-  public listen = (port: number, hostname?: string) => {
-    const server = this.express.listen(port, hostname ?? '0.0.0.0', () => {
-      logger.info(`ApiServer running on port ${port}`);
-      logger.info(`Listening for requests...`);
-    });
-
-    process.on('SIGINT', () => {
-      logger.info('Closing ApiServer gracefully');
-      this?.devMiddleware?.close((error) => {
-        if (error) {
-          logger.error('Unable to close development middleware gracefully').error(error.stack);
-        }
-      });
-      server.close((error) => {
-        if (error) {
-          logger.error('Unable to close ApiServer gracefully').error(error.stack);
-        }
-      });
-    });
-    return server;
-  };
+  }
 }
-
-export default new Server();
