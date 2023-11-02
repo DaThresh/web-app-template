@@ -32,10 +32,6 @@ export const config: Configuration = {
         test: /\.(png|svg|jpg|gif)$/,
         use: ['file-loader', { loader: 'image-webpack-loader' }],
       },
-      {
-        test: /\.txt$/,
-        use: 'raw-loader',
-      },
     ],
   },
   plugins: [new HtmlWebpackPlugin({ title: 'Production' })],
