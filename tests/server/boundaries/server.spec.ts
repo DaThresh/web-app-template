@@ -36,6 +36,13 @@ describe('Server', () => {
   describe('Instance methods', () => {
     const useSpy = jest.spyOn(application, 'use');
 
+    describe('Register Static', () => {
+      test('Can register Static UI Delivery', async () => {
+        const instance = new Server();
+        await instance.registerStatic(false);
+      });
+    });
+
     describe('Listen', () => {
       test('Will call listen', async () => {
         const listenSpy = jest.spyOn(application, 'listen');
