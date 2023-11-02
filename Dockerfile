@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml tsconfig.json webpack.common.ts webpack.dev.ts webpack.prod.ts /app/
+COPY package.json pnpm-lock.yaml tsconfig.json webpack.common.ts webpack.dev.ts webpack.prod.ts .
 COPY server server
 COPY client client
 COPY shared shared
