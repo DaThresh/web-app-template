@@ -2,9 +2,9 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import path from 'path';
 import { Configuration } from 'webpack';
 
-export default {
+export const config: Configuration = {
   output: {
-    filename: 'bundle-[name].js',
+    filename: '[name].bundle.js',
     path: path.resolve(__dirname, './dist/public'),
     publicPath: '/',
   },
@@ -43,10 +43,6 @@ export default {
       },
     ],
   },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, './client/index.html'),
-    }),
-  ],
-  stats: 'minimal',
-} as Configuration;
+  plugins: [new HtmlWebpackPlugin({ title: 'Production' })],
+  stats: 'summary',
+};
