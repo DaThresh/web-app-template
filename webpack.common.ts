@@ -1,5 +1,5 @@
-import path from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import path from 'path';
 import { Configuration } from 'webpack';
 
 export default {
@@ -18,16 +18,12 @@ export default {
       {
         test: /\.(ts|tsx)?$/,
         exclude: /node_modules/,
-        use: {
-          loader: 'ts-loader',
-        },
+        use: { loader: 'ts-loader' },
       },
       {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-        },
+        use: { loader: 'babel-loader' },
       },
       {
         test: /\.s[ac]ss$/i,
@@ -39,12 +35,7 @@ export default {
       },
       {
         test: /\.(png|svg|jpg|gif)$/,
-        use: [
-          'file-loader',
-          {
-            loader: 'image-webpack-loader',
-          },
-        ],
+        use: ['file-loader', { loader: 'image-webpack-loader' }],
       },
       {
         test: /\.txt$/,
