@@ -10,7 +10,7 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0",
-    "yarn": ">=1.22.19"
+    "pnpm": ">=8.10.0"
   },
   "scripts": {
     "start": "ts-node ./server/server.ts",
