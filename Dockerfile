@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -6,6 +6,9 @@ COPY package.json pnpm-lock.yaml tsconfig.json webpack.common.ts webpack.dev.ts 
 COPY server server
 COPY client client
 COPY shared shared
+
+RUN apk update
+RUN apk add python3 make g++
 
 RUN npm install -g pnpm
 RUN pnpm install --frozen-lockfile
