@@ -45,7 +45,8 @@ export class Server {
     });
   }
 
-  public async registerStatic(enableHmr = false) {
+  public async registerStatic(enableHmr: boolean) {
+    logger.info(`Enabling UI Delivery, HMR status: ${enableHmr}`);
     if (enableHmr) {
       const { default: webpack } = await import('webpack');
       const { default: webpackDevMiddleware } = await import('webpack-dev-middleware');
@@ -70,7 +71,7 @@ export class Server {
       this.express.use(express.static(`${__dirname}/../../public`));
       this.express.get('/(.*)', (request, response) => {
         response.type('text/html').sendFile(resolve(`${__dirname}/../../public/index.html`));
-        logger.http(`Delivered app to ${request.ip}`);
+        logger.debug(`Delivered app to ${request.ip}`);
       });
     }
   }

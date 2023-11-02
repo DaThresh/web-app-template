@@ -13,6 +13,7 @@ export type Environment = {
   appName: string;
   port: number;
   logLevel: string;
+  hotModuleReload: boolean;
   auth0: { tenantDomain: string };
   database: DatabaseEnvironment;
 };
@@ -21,6 +22,7 @@ export const environment: Environment = {
   appName: 'api-template',
   port: +(process.env.PORT ?? 8080),
   logLevel: process.env.LOG_LEVEL ?? 'info',
+  hotModuleReload: process.env.HOT_MODULE_RELOAD == 'true',
   auth0: {
     tenantDomain: process.env.AUTH0_TENANT_DOMAIN ?? 'project.us.auth0.com',
   },

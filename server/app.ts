@@ -6,7 +6,7 @@ import { gracefulShutdown } from './utilities/shutdown';
 export const createApp = async () => {
   await Boundaries.initialize(environment, initModels);
   const server = new Server();
-  server.registerStatic(true);
+  await server.registerStatic(environment.hotModuleReload);
 
   process.on('SIGINT', () => gracefulShutdown(server, Boundaries.Database));
   return { server };
