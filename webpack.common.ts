@@ -34,6 +34,6 @@ export const config: Configuration = {
       },
     ],
   },
-  plugins: [new HtmlWebpackPlugin({ title: 'Production' })],
+  plugins: [new HtmlWebpackPlugin({ title: 'Web-App Template' })],
   stats: 'summary',
 };
