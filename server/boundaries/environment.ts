@@ -14,7 +14,7 @@ export type Environment = {
   port: number;
   logLevel: string;
   hotModuleReload: boolean;
-  auth0: { tenantDomain: string };
+  auth0: { tenantDomain: string; uiClientId: string };
   database: DatabaseEnvironment;
 };
 
@@ -25,6 +25,7 @@ export const environment: Environment = {
   hotModuleReload: process.env.HOT_MODULE_RELOAD == 'true',
   auth0: {
     tenantDomain: process.env.AUTH0_TENANT_DOMAIN ?? 'project.us.auth0.com',
+    uiClientId: process.env.AUTH0_UI_CLIENT_ID ?? 'random-string',
   },
   database: {
     host: process.env.DATABASE_HOST ?? 'localhost',

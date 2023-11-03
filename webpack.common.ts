@@ -1,6 +1,7 @@
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import path from 'path';
-import { Configuration } from 'webpack';
+import { Configuration, DefinePlugin } from 'webpack';
+import { environment } from './server/boundaries';
 
 export const config: Configuration = {
   output: {
@@ -34,6 +35,14 @@ export const config: Configuration = {
       },
     ],
   },
-  plugins: [new HtmlWebpackPlugin({ title: 'Web-App Template' })],
+  plugins: [
+    new HtmlWebpackPlugin({ title: 'Web-App Template' }),
+    new DefinePlugin({
+      'process.env': {
+        AUTH0_TENANT_DOMAIN: JSON.stringify(environment.auth0.tenantDomain),
+        AUTH0_UI_CLIENT_ID: JSON.stringify(environment.auth0.uiClientId),
+      },
+    }),
+  ],
   stats: 'summary',
 };

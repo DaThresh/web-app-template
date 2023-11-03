@@ -5,7 +5,7 @@ export const sampleEnvironment: Environment = {
   appName: 'Sample App',
   logLevel: 'info',
   hotModuleReload: false,
-  auth0: { tenantDomain: 'https://test.auth0.com' },
+  auth0: { tenantDomain: 'https://test.auth0.com', uiClientId: 'random-string' },
   database: {
     host: 'localhost',
     port: 3306,
