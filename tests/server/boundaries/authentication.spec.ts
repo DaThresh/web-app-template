@@ -26,8 +26,9 @@ type TokenCreationOptions = {
 
 describe('Authentication class', () => {
   const instance = new Authentication(sampleEnvironment);
-  const getRemoteJWKSetSpy = jest.spyOn(Authentication.prototype as any, 'getRemoteJWKSet');
   // Must use type any to spy on private method
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getRemoteJWKSetSpy = jest.spyOn(Authentication.prototype as any, 'getRemoteJWKSet');
 
   const createHeaders = async (options?: TokenCreationOptions) => {
     const { publicKey, privateKey } = await generateKeyPair('RS256');

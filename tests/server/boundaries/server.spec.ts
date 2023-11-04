@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import express, { application } from 'express';
 import { Server as HttpServer } from 'http';
 import request from 'supertest';

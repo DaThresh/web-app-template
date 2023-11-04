@@ -60,7 +60,7 @@ describe('Controller', () => {
         successCode: 201,
         authorization: (headers) => ({ id: headers['id'] }),
         inputSchemas: Controller.defaultInputSchema,
-        callback: ({}, { id }) => {
+        callback: (_, { id }) => {
           expect(id).toBe('testing');
         },
       });

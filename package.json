@@ -14,6 +14,7 @@
   },
   "scripts": {
     "start": "ts-node ./server/server.ts",
+    "lint": "eslint .",
     "test": "jest --config=./tests/jest.config.ts",
     "build": "rm -rf ./dist && tsc && webpack --config webpack.prod.ts"
   },
